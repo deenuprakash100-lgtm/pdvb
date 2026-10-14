@@ -1,0 +1,17 @@
+// In-memory limiter: fine for a single server. Use Redis/Upstash when running multiple instances.
+const hits = new Map<string, { n: number; reset: number }>();
+
+export function rateLimit(key: string, limit: number, windowMs: number): boolean {
+  const now = Date.now();
+  const entry = hits.get(key);
+  if (!entry || entry.reset < now) {
+    hits.set(key, { n: 1, reset: now + windowMs });
+    return true;
+  }
+  entry.n += 1;
+  return entry.n <= limit;
+}
+
+export function clientIp(req: Request): string {
+  return req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+}
